@@ -205,17 +205,19 @@ static std::string normalizeZooKeeperPath(std::string zookeeper_path)
 
 static String extractZooKeeperName(const String & path)
 {
+    static constexpr auto default_zookeeper_name = "default";
     if (path.empty())
         throw Exception("ZooKeeper path should not be empty", ErrorCodes::ILLEGAL_TYPE_OF_ARGUMENT);
-    auto pos = path.find(':');
-    if (pos != String::npos)
+    if (path[0] == '/')
+        return default_zookeeper_name;
+    auto pos = path.find(":/");
+    if (pos != String::npos && pos < path.find('/'))
     {
         auto zookeeper_name = path.substr(0, pos);
         if (zookeeper_name.empty())
             throw Exception("Zookeeper path should start with '/' or '<auxiliary_zookeeper_name>:/'", ErrorCodes::ILLEGAL_TYPE_OF_ARGUMENT);
         return zookeeper_name;
     }
-    static constexpr auto default_zookeeper_name = "default";
     return default_zookeeper_name;
 }
 
@@ -223,8 +225,10 @@ static String extractZooKeeperPath(const String & path)
 {
     if (path.empty())
         throw Exception("ZooKeeper path should not be empty", ErrorCodes::ILLEGAL_TYPE_OF_ARGUMENT);
-    auto pos = path.find(':');
-    if (pos != String::npos)
+    if (path[0] == '/')
+        return path;
+    auto pos = path.find(":/");
+    if (pos != String::npos && pos < path.find('/'))
     {
         return normalizeZooKeeperPath(path.substr(pos + 1, String::npos));
     }
